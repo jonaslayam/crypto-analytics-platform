@@ -1,0 +1,47 @@
+executor: KubernetesExecutor
+
+nodeSelector:
+  role: core
+
+postgresql:
+  primary:
+    nodeSelector:
+      role: core
+
+webserver:
+  service:
+    type: ClusterIP
+    ports:
+      - name: airflow-ui
+        port: 8080
+        targetPort: 8080
+
+env:
+  - name: AIRFLOW__KUBERNETES__POD_TEMPLATE_FILE
+    value: "/opt/airflow/k8s/pod_template.yaml"
+
+extraEnvFrom: |
+  - secretRef:
+      name: secrets-local
+
+scheduler:
+  nodeSelector:
+    role: core
+  extraVolumes:
+    - name: worker-template-volume
+      configMap:
+        name: worker-pod-template
+  extraVolumeMounts:
+    - name: worker-template-volume
+      mountPath: "/opt/airflow/k8s"
+      readOnly: true
+
+config:
+  kubernetes:
+    namespace: airflow
+    delete_worker_pods: "False"
+    
+  core:
+    parallelism: "16"
+    dag_concurrency: "8"
+    max_active_runs_per_dag: "2"

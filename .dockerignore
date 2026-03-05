@@ -1,0 +1,48 @@
+# ==========================================
+# INFRASTRUCTURE (Terraform)
+# ==========================================
+infra/
+.terraform/
+*.tfstate*
+*.tfvars
+*.tfplan
+.terraform.lock.hcl
+
+# ==========================================
+# SECRETS AND CONFIGURATION (K8s / Airflow)
+# ==========================================
+secrets-*.yaml
+.env
+config/airflow.cfg
+webserver_config.py
+
+# ==========================================
+# DATA AND PERSISTENCE (Local)
+# ==========================================
+*.db
+*.duckdb
+*.parquet
+*.sqlite
+data/
+temp/
+
+# ==========================================
+# PYTHON AND ENVIRONMENTS
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+.pytest_cache/
+
+# ==========================================
+# GIT AND EDITORS
+# ==========================================
+.git
+.gitignore
+.dockerignore
+.idea/
+.vscode/
+*.swp

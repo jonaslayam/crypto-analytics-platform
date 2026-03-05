@@ -1,0 +1,46 @@
+# === SECRETS & ENVS ===
+.env
+*.env
+secrets-*.yaml
+config/airflow.cfg
+webserver_config.py
+auth/
+*.pem
+*.key
+
+# === TERRAFORM ===
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+crash.log
+*.tfvars
+*.tfvars.json
+override.tf
+override.tf.json
+.terraform.lock.hcl
+
+# === PYTHON ===
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+build/
+dist/
+*.egg-info/
+
+# === DATA & DB ===
+data/
+temp/
+*.db
+*.duckdb
+*.parquet
+*.csv
+*.jsonl
+
+# === IDE & OS ===
+.idea/
+.vscode/
+.DS_Store
+*.swp
