@@ -2,3 +2,4 @@ python-dotenv==1.0.1
 requests==2.32.5
 pytest==8.3.2
 requests-mock==1.12.1
+oci==2.168.0

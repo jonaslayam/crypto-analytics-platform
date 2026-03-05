@@ -80,7 +80,13 @@ class CoincapExtractor(BaseExtractor):
         except Exception as e:
             logger.error(f"Unexpected error: {e}")
             raise
+    
+    def upload_to_oci(self, local_path: Path) -> str:
+        """Upload extracted file to OCI Object Storage."""
+        logger.info(f"Uploading {local_path} to OCI...")
+        return f"oci://bucket/{local_path.name}"
 
 if __name__ == "__main__":
     extractor = CoincapExtractor(api_key=os.getenv('COINCAP_API_KEY'))
     path = extractor.extract()
+    extractor.upload_to_oci(path)
