@@ -1,10 +1,14 @@
 import os
 import requests
 from abc import ABC, abstractmethod
-from typing import Optional, Dict
+from typing import Dict
 from pathlib import Path
 from datetime import datetime
 from src.utils.logger import get_logger
+from src.utils.oci_client import get_object_storage_client
+from dotenv import load_dotenv
+
+load_dotenv()
 
 logger = get_logger("EXTRACT_COINCAP")
 
@@ -16,7 +20,7 @@ RAW_DATA_DIR = BASE_DIR / "data" / "raw"
 class BaseExtractor(ABC):
     """Abstract class for extractors."""
     @abstractmethod
-    def extract(self) -> Path:
+    def extract(self) -> str:
         pass
 
 class CoincapExtractor(BaseExtractor):
@@ -27,13 +31,15 @@ class CoincapExtractor(BaseExtractor):
     download of financial assets in JSON format.
 
     Attributes:
-        api_key (Optional[str]): API key to increase rate limits.
-        limit (int): Max ammount of assets to obtain per request.
+        api_key (str): API key to increase rate limits.
+        limit (int): Maximum number of assets to obtain per request.
     """
-    def __init__(self, api_key: Optional[str] = None, limit: int = 100):
+    def __init__(self, api_key: str, limit: int = 100):
         self.api_key = api_key
         self.limit = limit
         self.url = API_URL
+        self.namespace = os.getenv("OCI_NAMESPACE")
+        self.bucket_name = os.getenv("OCI_BUCKET_NAME")
         self._setup_directories()
 
     def _setup_directories(self) -> None:
@@ -46,7 +52,7 @@ class CoincapExtractor(BaseExtractor):
             headers["Authorization"] = f"Bearer {self.api_key}"
         return headers
 
-    def extract(self) -> Path:
+    def extract(self) -> str:
         """
         Executes the extraction with streaming logic for memory efficiency.
         """
@@ -70,23 +76,36 @@ class CoincapExtractor(BaseExtractor):
                     for chunk in response.iter_content(chunk_size=8192):
                         if chunk: # Filter out keep-alive chunks
                             f.write(chunk)
+            
+            now = datetime.now()
+            partition_path = f"year={now.year}/month={now.month:02d}/day={now.day:02d}"
+            object_name = f"raw/{partition_path}/{file_path.name}"
+            client = get_object_storage_client()
 
-            logger.info(f"Successful extraction. File saved to: {file_path}")
-            return file_path
+            logger.info(f"Uploading {file_path.name} to OCI Bucket: {self.bucket_name}...")
+            with open(file_path, "rb") as f:
+                client.put_object(
+                    namespace_name=self.namespace,
+                    bucket_name=self.bucket_name,
+                    object_name=object_name,
+                    put_object_body=f
+                )
 
+            oci_uri = f"oci://{self.bucket_name}@{self.namespace}/{object_name}"
+            logger.info(f"Upload successful. URI: {oci_uri}")
+ 
         except requests.exceptions.HTTPError as http_err:
             logger.error(f"HTTP Error: {http_err} at {self.url}")
             raise
         except Exception as e:
             logger.error(f"Unexpected error: {e}")
             raise
+        else:
+            if file_path.exists():
+                file_path.unlink()
+            return oci_uri
     
-    def upload_to_oci(self, local_path: Path) -> str:
-        """Upload extracted file to OCI Object Storage."""
-        logger.info(f"Uploading {local_path} to OCI...")
-        return f"oci://bucket/{local_path.name}"
-
 if __name__ == "__main__":
     extractor = CoincapExtractor(api_key=os.getenv('COINCAP_API_KEY'))
     path = extractor.extract()
-    extractor.upload_to_oci(path)
+    print(f"Extraction completed. File saved to: {path}")

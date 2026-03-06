@@ -1,6 +1,9 @@
 import os
+from dotenv import load_dotenv
 from src.utils.logger import get_logger
 from oci.object_storage import ObjectStorageClient
+
+load_dotenv()
 
 logger = get_logger("OCI_CLIENT")
 
