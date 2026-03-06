@@ -15,6 +15,7 @@ secrets-*.yaml
 .env
 config/airflow.cfg
 webserver_config.py
+auth/
 
 # ==========================================
 # DATA AND PERSISTENCE (Local)
