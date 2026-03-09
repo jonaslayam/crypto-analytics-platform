@@ -1,6 +1,6 @@
 import os
 import requests
-from abc import ABC, abstractmethod
+from src.base import BaseExtractor
 from typing import Dict
 from pathlib import Path
 from datetime import datetime
@@ -12,16 +12,10 @@ load_dotenv()
 
 logger = get_logger("EXTRACT_COINCAP")
 
-API_URL = os.getenv('COINCAP_API_URL')
+API_URL = os.getenv("COINCAP_API_URL")
 BASE_DIR = Path(__file__).resolve().parent.parent 
 RAW_DATA_DIR = BASE_DIR / "data" / "raw"
 
-
-class BaseExtractor(ABC):
-    """Abstract class for extractors."""
-    @abstractmethod
-    def extract(self) -> str:
-        pass
 
 class CoincapExtractor(BaseExtractor):
     """
@@ -43,7 +37,7 @@ class CoincapExtractor(BaseExtractor):
         self._setup_directories()
 
     def _setup_directories(self) -> None:
-        """Create directories."""
+        """Ensures the local raw data directory exists."""
         RAW_DATA_DIR.mkdir(parents=True, exist_ok=True)
 
     def _get_headers(self) -> Dict[str, str]:
@@ -51,10 +45,11 @@ class CoincapExtractor(BaseExtractor):
         if self.api_key:
             headers["Authorization"] = f"Bearer {self.api_key}"
         return headers
-
+    
     def extract(self) -> str:
         """
-        Executes the extraction with streaming logic for memory efficiency.
+        Main execution flow: Download -> Upload to Cloud -> Cleanup.
+        Returns the OCI URI of the uploaded file.
         """
         params = {"limit": self.limit}
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -101,10 +96,12 @@ class CoincapExtractor(BaseExtractor):
             logger.error(f"Unexpected error: {e}")
             raise
         else:
+            return oci_uri
+        finally:
             if file_path.exists():
                 file_path.unlink()
-            return oci_uri
     
+
 if __name__ == "__main__":
     extractor = CoincapExtractor(api_key=os.getenv('COINCAP_API_KEY'))
     path = extractor.extract()
