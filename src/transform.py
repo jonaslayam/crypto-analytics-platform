@@ -48,7 +48,6 @@ class CryptoTransformer(BaseTransformer):
         """
 
         s3_uri = oci_uri.replace("oci://", "s3://").split("@")[0] + "/" + oci_uri.split("/",3)[-1]
-        print(s3_uri)
   
         output_uri = s3_uri.replace("raw", "processed").replace(".json", ".parquet")
 
@@ -71,7 +70,6 @@ class CryptoTransformer(BaseTransformer):
                     CAST((asset).priceUsd AS DOUBLE) AS price_usd,
                     CAST((asset).changePercent24Hr AS DOUBLE) AS change_24h,
                     CAST((asset).marketCapUsd AS DOUBLE) AS market_cap,
-                    -- The Window Function you wanted to learn:
                     RANK() OVER (ORDER BY CAST((asset).changePercent24Hr AS DOUBLE) DESC) AS performance_rank,
                     CURRENT_TIMESTAMP AS processed_at
                 FROM raw_data;
@@ -80,7 +78,7 @@ class CryptoTransformer(BaseTransformer):
             # 3. Write to OCI as Parquet
             self.con.execute(f"""
                 COPY transformed_data TO '{output_uri}'
-                (FORMAT PARQUET);
+                (FORMAT PARQUET, COMPRESSION ZSTD);
                 """)
 
         except Exception as e:
@@ -91,7 +89,7 @@ class CryptoTransformer(BaseTransformer):
             return output_uri
 
 if __name__ == "__main__":
-    # The URI you provided from your manual extraction
+    
     test_uri = "oci://jonas-data-platform@axxdt8jrk4om/raw/year=2026/month=03/day=09/assets_20260309_115632.json"
     
     try:
