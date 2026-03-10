@@ -26,6 +26,7 @@ auth/
 *.sqlite
 data/
 temp/
+logs/
 
 # ==========================================
 # PYTHON AND ENVIRONMENTS
@@ -47,3 +48,10 @@ env/
 .idea/
 .vscode/
 *.swp
+
+# ==========================================
+# DBT
+# ==========================================
+crypto_analytics/target/
+crypto_analytics/dbt_packages/
+crypto_analytics/logs/
