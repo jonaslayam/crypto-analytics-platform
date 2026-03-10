@@ -1,0 +1,23 @@
+version: 2
+
+models:
+  - name: fct_crypto_latest_prices
+    description: "Fact table containing the most recent captured price per asset (Gold Layer). It uses a window function to filter for the latest record by timestamp."
+    columns:
+      - name: ASSET_ID
+        description: "Primary key for the cryptocurrency (e.g., bitcoin, ethereum). Unique identifier at the grain of this table."
+        tests:
+          - unique
+          - not_null
+      - name: SYMBOL
+        description: "Ticker symbol for the asset (e.g., BTC, ETH)."
+        tests:
+          - not_null
+      - name: PRICE_USD
+        description: "Asset price cast to numeric format for analytical processing."
+        tests:
+          - not_null
+      - name: PROCESSED_AT
+        description: "Timestamp indicating when the record was processed into the Gold layer."
+        tests:
+          - not_null

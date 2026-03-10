@@ -4,13 +4,15 @@ sources:
   - name: oci_silver_source
     schema: OCI_SILVER
     database: G1BB5D2A41801FE_ANALYTICS
-    description: "Capa Silver en Oracle ADW con datos provenientes de Object Storage"
+    description: "Silver Layer in Oracle ADW containing raw data ingested from OCI Object Storage via External Tables."
     
     loader: Object Storage External Table
 
     tables:
       - name: CRYPTO_ASSETS_EXT
-        description: "Tabla externa con el histórico de precios de criptoactivos"
+        description: "External table containing the historical raw price data for crypto assets."
+        
+        # Service Level Agreement (SLA) for data freshness
         freshness:
           warn_after: {count: 24, period: hour}
           error_after: {count: 48, period: hour}
@@ -18,13 +20,16 @@ sources:
 
         columns:
           - name: ASSET_ID
+            description: "Natural key identifying the asset (e.g., bitcoin)."
             tests:
               - not_null
           - name: SYMBOL
+            description: "Market ticker symbol for the asset."
             tests:
               - not_null
           - name: PRICE_USD
+            description: "Raw price value in USD as received from the source API."
             tests:
               - not_null
           - name: PROCESSED_AT
-            description: "Timestamp de procesamiento en la capa Silver"
+            description: "Ingestion timestamp indicating when the record was loaded into the Silver layer."
