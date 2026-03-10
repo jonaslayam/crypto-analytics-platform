@@ -44,3 +44,11 @@ temp/
 .vscode/
 .DS_Store
 *.swp
+
+# === DBT ===
+crypto_analytics/target/
+crypto_analytics/dbt_packages/
+crypto_analytics/logs/*
+
+# === LOGS ===
+logs/*
