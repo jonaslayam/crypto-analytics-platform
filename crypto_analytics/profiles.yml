@@ -1,0 +1,14 @@
+crypto_analytics:
+  outputs:
+    prod:
+      type: oracle
+      user: "{{ env_var('ADW_USER') }}"
+      password: "{{ env_var('ADW_PASS') }}"
+      host: "{{ env_var('ADW_HOST') }}"
+      port: 1521
+      service: "{{ env_var('ADW_SERVICE') }}"
+      schema: "{{ env_var('ADW_SCHEMA') }}"
+      database: "{{ env_var('ADW_DATABASE') }}"
+      protocol: tcps
+      threads: 1
+  target: prod

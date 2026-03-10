@@ -1,0 +1,30 @@
+version: 2
+
+sources:
+  - name: oci_silver_source
+    schema: OCI_SILVER
+    database: G1BB5D2A41801FE_ANALYTICS
+    description: "Capa Silver en Oracle ADW con datos provenientes de Object Storage"
+    
+    loader: Object Storage External Table
+
+    tables:
+      - name: CRYPTO_ASSETS_EXT
+        description: "Tabla externa con el histórico de precios de criptoactivos"
+        freshness:
+          warn_after: {count: 24, period: hour}
+          error_after: {count: 48, period: hour}
+        loaded_at_field: PROCESSED_AT
+
+        columns:
+          - name: ID
+            tests:
+              - not_null
+          - name: SYMBOL
+            tests:
+              - not_null
+          - name: PRICE_USD
+            tests:
+              - not_null
+          - name: PROCESSED_AT
+            description: "Timestamp de procesamiento en la capa Silver"
