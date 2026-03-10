@@ -17,7 +17,7 @@ sources:
         loaded_at_field: PROCESSED_AT
 
         columns:
-          - name: ID
+          - name: ASSET_ID
             tests:
               - not_null
           - name: SYMBOL
