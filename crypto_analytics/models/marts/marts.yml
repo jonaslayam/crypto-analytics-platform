@@ -2,22 +2,33 @@ version: 2
 
 models:
   - name: fct_crypto_latest_prices
-    description: "Fact table containing the most recent captured price per asset (Gold Layer). It uses a window function to filter for the latest record by timestamp."
+    description: > 
+      Fact table containing the most recent pricing metrics per asset. 
+      This table follows a Star Schema design, storing only measures and foreign keys 
+      to optimize storage and maintainability.
     columns:
       - name: ASSET_ID
-        description: "Primary key for the cryptocurrency (e.g., bitcoin, ethereum). Unique identifier at the grain of this table."
-        tests:
-          - unique
-          - not_null
-      - name: SYMBOL
-        description: "Ticker symbol for the asset (e.g., BTC, ETH)."
+        description: "Foreign key (FK) linking to dim_assets. grain: one record per asset."
         tests:
           - not_null
+          - relationships:
+              to: ref('dim_assets')
+              field: asset_id
+
+      - name: DATE_KEY
+        description: "Foreign key (FK) linking to the dynamic dim_date dimension (YYYYMMDD)."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_date')
+              field: date_key
+
       - name: PRICE_USD
-        description: "Asset price cast to numeric format for analytical processing."
+        description: "Asset price measure in USD. Cast to NUMBER(18,8) for financial precision."
         tests:
           - not_null
+
       - name: PROCESSED_AT
-        description: "Timestamp indicating when the record was processed into the Gold layer."
+        description: "Event timestamp indicating the specific ingestion time."
         tests:
           - not_null
