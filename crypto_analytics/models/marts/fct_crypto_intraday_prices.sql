@@ -44,13 +44,13 @@ calculated_features AS (
 
 final_features AS (
     SELECT 
-        *,
+        cf.*,
         CASE 
-            WHEN last_price_usd IS NOT NULL AND last_price_usd > 0 
-            THEN ((price_usd - last_price_usd) / last_price_usd) * 100 
+            WHEN cf.last_price_usd IS NOT NULL AND cf.last_price_usd > 0 
+            THEN ((cf.price_usd - cf.last_price_usd) / cf.last_price_usd) * 100 
             ELSE 0 
         END AS pct_change_since_last
-    FROM calculated_features
+    FROM calculated_features cf
 )
 
 SELECT 
