@@ -3,10 +3,11 @@ import requests
 from src.base import BaseExtractor
 from typing import Dict
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 from src.utils.logger import get_logger
 from src.utils.oci_client import get_object_storage_client
 from dotenv import load_dotenv
+import json
 
 load_dotenv()
 
@@ -72,8 +73,16 @@ class CoincapExtractor(BaseExtractor):
                         if chunk: # Filter out keep-alive chunks
                             f.write(chunk)
             
-            now = datetime.now()
-            partition_path = f"year={now.year}/month={now.month:02d}/day={now.day:02d}"
+            with open(file_path, 'r') as f:
+                data = json.load(f)
+                timestamp = data.get('timestamp')
+
+            if timestamp > 1e10: 
+                timestamp = timestamp / 1000.0
+                
+            event_time = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+
+            partition_path = f"year={event_time.year}/month={event_time.month:02d}/day={event_time.day:02d}"
             object_name = f"raw/{partition_path}/{file_path.name}"
             client = get_object_storage_client()
 

@@ -5,8 +5,8 @@
 
 WITH date_range AS (
     SELECT 
-        TRUNC(MIN(processed_at)) as min_date,
-        TRUNC(MAX(processed_at)) as max_date
+        TRUNC(MIN(event_time)) as min_date,
+        TRUNC(MAX(event_time)) + 365 as max_date
     FROM {{ ref('stg_crypto_prices') }}
 ),
 

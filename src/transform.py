@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 import duckdb
 import os
 from src.base import BaseTransformer
-from pathlib import PurePosixPath
+
 
 load_dotenv()
 logger = get_logger("CRYPTO_TRANSFORMER")
@@ -59,7 +59,9 @@ class CryptoTransformer(BaseTransformer):
             # 1. Load and Flatten JSON (UNNESTing the 'data' array)
             self.con.execute(f"""
                 CREATE OR REPLACE TABLE raw_data AS
-                SELECT UNNEST(data) as asset 
+                SELECT UNNEST(data) as asset,
+                       epoch_ms(CAST(timestamp AS BIGINT))::TIMESTAMPTZ as event_time,
+                       CURRENT_TIMESTAMP::TIMESTAMPTZ as processed_at
                 FROM read_json_auto('{s3_uri}');
             """)
 
@@ -85,7 +87,8 @@ class CryptoTransformer(BaseTransformer):
 
                             (asset).explorer AS explorer,
 
-                            CURRENT_TIMESTAMP AS processed_at
+                            event_time,
+                            processed_at
 
                         FROM raw_data
                     )
@@ -113,7 +116,7 @@ class CryptoTransformer(BaseTransformer):
 
 if __name__ == "__main__":
     # The URI you provided from your manual extraction
-    test_uri = "oci://jonas-data-platform@axxdt8jrk4om/raw/year=2026/month=03/day=09/assets_20260309_115632.json"
+    test_uri = "oci://jonas-data-platform@axxdt8jrk4om/raw/year=2026/month=03/day=11/assets_20260311_084046.json"
     
     try:
         logger.info("--- Starting Manual Transformation Test ---")

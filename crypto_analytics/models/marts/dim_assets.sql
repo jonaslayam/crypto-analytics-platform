@@ -4,6 +4,7 @@
 ) }}
 
 SELECT
+    dbt_scd_id AS asset_sk,
     asset_id,
     symbol,
     name,
