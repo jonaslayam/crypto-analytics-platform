@@ -42,6 +42,6 @@ config:
     delete_worker_pods: "False"
     
   core:
-    parallelism: "16"
-    dag_concurrency: "8"
-    max_active_runs_per_dag: "2"
+    parallelism: "4"
+    dag_concurrency: "4"
+    max_active_runs_per_dag: "1"
