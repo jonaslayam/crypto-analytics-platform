@@ -11,17 +11,19 @@ postgresql:
     pullPolicy: IfNotPresent
 
   primary:
+    replicas: 1
     nodeSelector:
       role: core
-  resources:
-    requests:
-      cpu: "250m"
-      memory: "256Mi"
-    limits:
-      cpu: "1000m"
-      memory: "4Gi"
+    resources:
+      requests:
+        cpu: "250m"
+        memory: "512Mi"
+      limits:
+        cpu: "1000m"
+        memory: "4Gi"
 
-webserver:
+apiServer:
+  replicas: 1
   service:
     type: ClusterIP
     ports:
@@ -36,15 +38,8 @@ webserver:
       cpu: "500m"
       memory: "2Gi"
 
-env:
-  - name: AIRFLOW__KUBERNETES__POD_TEMPLATE_FILE
-    value: "/opt/airflow/k8s/pod_template.yaml"
-
-extraEnvFrom: |
-  - secretRef:
-      name: secrets-local
-
 scheduler:
+  replicas: 1
   nodeSelector:
     role: core
   extraVolumes:
@@ -62,6 +57,45 @@ scheduler:
     limits:
       cpu: "1000m"
       memory: "2Gi"
+
+triggerer:
+  replicas: 1
+  nodeSelector:
+    role: core
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "512Mi"
+    limits:
+      cpu: "1000m"
+      memory: "1.5Gi"
+
+dagProcessor:
+  replicas: 1
+  resources:
+    requests:
+      cpu: "400m"
+      memory: "512Mi"
+    limits:
+      cpu: "600m"
+      memory: "1.5Gi"
+
+statsd:
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "200m"
+      memory: "256Mi"
+
+env:
+  - name: AIRFLOW__KUBERNETES__POD_TEMPLATE_FILE
+    value: "/opt/airflow/k8s/pod_template.yaml"
+
+extraEnvFrom: |
+  - secretRef:
+      name: secrets-local
 
 config:
   kubernetes:
