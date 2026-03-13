@@ -6,13 +6,12 @@ WORKDIR /opt/airflow
 
 USER airflow
 
-COPY requirements.txt .
+COPY requirements.txt /requirements.txt
 
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r /requirements.txt
 
-COPY dags/ ./dags
-COPY src/ ./src
-COPY crypto_analytics/ ./crypto_analytics
+COPY dags/ /opt/airflow/dags
+COPY src/ /opt/airflow/src
 
 ENV PYTHONPATH=/opt/airflow
 ENV PATH="/home/airflow/.local/bin:${PATH}"

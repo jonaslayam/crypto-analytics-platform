@@ -1,14 +1,49 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: dummy-name
+  name: airflow-worker-template
+
 spec:
   containers:
     - name: base
+      image: airflow-crypto:latest
+      imagePullPolicy: IfNotPresent
+
+      resources:
+        requests:
+          cpu: "500m"
+          memory: "256Mi"
+        limits:
+          cpu: "1000m"
+          memory: "512Mi"
+
+      envFrom:
+        - secretRef:
+            name: secrets-local
+
+      volumeMounts:
+        - name: airflow-tmp
+          mountPath: /tmp
+
+  volumes:
+    - name: airflow-tmp
+      emptyDir:
+        sizeLimit: 20Gi
+
+    - name: oci-key-vol
+      secret:
+        secretName: secrets-local
+        items:
+          - key: oci_key.pem
+            path: oci_private_key.pem
+
   tolerations:
     - key: "workload"
       operator: "Equal"
       value: "heavy"
       effect: "NoSchedule"
+
   nodeSelector:
     role: worker
+
+  restartPolicy: Never

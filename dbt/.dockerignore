@@ -1,0 +1,18 @@
+# ==========================================
+# DBT
+# ==========================================
+target/
+dbt_packages/
+logs/
+
+
+.git
+.gitignore
+__pycache__
+*.pyc
+*.pyo
+*.log
+.env
+.env.*
+venv
+.venv

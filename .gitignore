@@ -7,6 +7,9 @@ webserver_config.py
 auth/
 *.pem
 *.key
+secrets/
+*.pem
+k8s/secrets/*.env
 
 # === TERRAFORM ===
 **/.terraform/*
@@ -46,9 +49,10 @@ temp/
 *.swp
 
 # === DBT ===
-crypto_analytics/target/
-crypto_analytics/dbt_packages/
-crypto_analytics/logs/*
+dbt/target/
+dbt/dbt_packages/
+dbt/logs/*
+dbt/.user.yml
 
 # === LOGS ===
-logs/*
+logs/

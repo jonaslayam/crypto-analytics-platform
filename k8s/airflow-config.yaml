@@ -4,9 +4,22 @@ nodeSelector:
   role: core
 
 postgresql:
+  image:
+    registry: docker.io
+    repository: bitnami/postgresql
+    tag: latest
+    pullPolicy: IfNotPresent
+
   primary:
     nodeSelector:
       role: core
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "256Mi"
+    limits:
+      cpu: "1000m"
+      memory: "4Gi"
 
 webserver:
   service:
@@ -15,6 +28,13 @@ webserver:
       - name: airflow-ui
         port: 8080
         targetPort: 8080
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+    limits:
+      cpu: "500m"
+      memory: "2Gi"
 
 env:
   - name: AIRFLOW__KUBERNETES__POD_TEMPLATE_FILE
@@ -35,6 +55,13 @@ scheduler:
     - name: worker-template-volume
       mountPath: "/opt/airflow/k8s"
       readOnly: true
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "512Mi"
+    limits:
+      cpu: "1000m"
+      memory: "2Gi"
 
 config:
   kubernetes:
@@ -42,6 +69,6 @@ config:
     delete_worker_pods: "False"
     
   core:
-    parallelism: "4"
-    dag_concurrency: "4"
+    parallelism: "1"
+    dag_concurrency: "1"
     max_active_runs_per_dag: "1"

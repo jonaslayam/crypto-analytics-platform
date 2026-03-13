@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: airflow
+
+secretGenerator:
+- name: secrets-local
+  envs:
+  - secrets/airflow.env
+  - secrets/dbt.env
+  files:
+  - oci_key.pem=secrets/oci/OCI_PRIVATE_KEY_CONTENT.pem
+
+generatorOptions:
+  disableNameSuffixHash: true
