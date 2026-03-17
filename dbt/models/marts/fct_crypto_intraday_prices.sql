@@ -1,7 +1,8 @@
 {{ config(
     materialized='incremental',
     unique_key='fact_sk',
-    schema='OCI_GOLD'
+    schema='OCI_GOLD',
+    on_schema_change='sync_all_columns'
 ) }}
 
 WITH base_prices AS (

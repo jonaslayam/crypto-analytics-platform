@@ -17,9 +17,9 @@ config:
     delete_worker_pods: "False"
     delete_worker_pods_on_failure: "False"
   core:
-    parallelism: "1"
-    dag_concurrency: "1"
-    max_active_runs_per_dag: "1"
+    parallelism: "2"
+    dag_concurrency: "2"
+    max_active_runs_per_dag: "2"
 
 extraEnvFrom: |
   - secretRef:

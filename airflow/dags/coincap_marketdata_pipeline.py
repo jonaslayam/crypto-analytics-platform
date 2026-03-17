@@ -3,6 +3,26 @@ from datetime import timedelta
 from airflow.decorators import dag, task
 from src.extract import CoincapExtractor
 from src.transform import CryptoTransformer
+from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperator
+from kubernetes.client import models as k8s
+
+
+K8S_CONFIG_WORKER = {
+    "pod_override": k8s.V1Pod(
+        spec=k8s.V1PodSpec(
+            node_selector={"role": "worker"},
+            tolerations=[
+                k8s.V1Toleration(
+                    key="workload",
+                    operator="Equal",
+                    value="heavy",
+                    effect="NoSchedule"
+                )
+            ],
+            containers=[]
+        )
+    )
+}
 
 default_args = {
     "owner": "airflow",
@@ -25,7 +45,8 @@ default_args = {
 
 def coincap_marketdata_pipeline():
     """Main pipeline function."""
-    @task
+
+    @task(executor_config=K8S_CONFIG_WORKER)
     def extract_task():
         """Extracts data from the Coincap API."""
         api_key = os.getenv('COINCAP_API_KEY')
@@ -33,55 +54,44 @@ def coincap_marketdata_pipeline():
 
         return str(file_path)
 
-    @task
+    @task(executor_config=K8S_CONFIG_WORKER)
     def transform_task(raw_file_path: str):
         """Transforms the extracted data."""
         transformer = CryptoTransformer()
         transformed_path = transformer.transform(raw_file_path)
         return transformed_path
 
-    @task
-    def dbt_run_task(trigger_signal: str):
-        """
-        Executes dbt run to move data from the Silver layer to the Gold layer in ADW.
-        Uses dynamic path discovery to remain portable across different environments.
-        """
-        import os
-        import subprocess
-
-        # Get the directory where the current DAG file is located
-        # This assumes your DAG is in /crypto-analytics-platform/dags/
-        dag_path = os.path.dirname(os.path.abspath(__file__))
-        
-        # Calculate the project root (going up one level from the dags folder)
-        project_root = os.path.dirname(dag_path)
-        
-        # Define relative paths to the dbt project and profiles
-        dbt_project_dir = os.path.join(project_root, "dbt", "crypto_analytics")
-        
-        # Best practice: keep the profiles.yml in the root of your dbt project for portability
-        profiles_dir = dbt_project_dir 
-
-        print(f"Starting dbt run after successful upload: {trigger_signal}")
-        print(f"Working Directory: {dbt_project_dir}")
-
-        # Execute dbt run using the thin-mode adapter
-        result = subprocess.run(
-            ["dbt", "run", "--profiles-dir", profiles_dir],
-            cwd=dbt_project_dir,
-            capture_output=True,
-            text=True
-        )
-
-        if result.returncode != 0:
-            print(f"dbt Errors:\n{result.stderr}")
-            raise Exception("dbt run failed. Please check the logs for transformation errors.")
-        
-        print(f"dbt Output:\n{result.stdout}")
-        return "Gold Layer successfully updated"
+    dbt_run = KubernetesPodOperator(
+        task_id="dbt_run_task",
+        name="dbt-run-pod",
+        image="crypto-dbt:latest",
+        image_pull_policy="IfNotPresent",
+        cmds=["dbt", "run"],
+        arguments=[
+            "--project-dir", "/app",
+            "--profiles-dir", "/app"
+        ],
+        node_selector={"role": "worker"},
+        tolerations=[
+            k8s.V1Toleration(
+                key="workload",
+                operator="Equal",
+                value="heavy",
+                effect="NoSchedule"
+            )
+        ],
+        env_from=[
+            k8s.V1EnvFromSource(
+                secret_ref=k8s.V1SecretEnvSource(name="secrets-local")
+            )
+        ],
+        is_delete_operator_pod=False,
+        get_logs=True,
+        executor_config=K8S_CONFIG_WORKER
+    )
     
     path_to_raw = extract_task()
     path_to_transformed = transform_task(path_to_raw)
-    dbt_run_task(path_to_transformed)
+    path_to_transformed >> dbt_run
 
 coincap_marketdata_pipeline()
