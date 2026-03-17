@@ -21,7 +21,7 @@ default_args = {
     catchup=False,
     tags=["coincap", "marketdata", "etl"],
     default_args=default_args,
-)
+)   
 
 def coincap_marketdata_pipeline():
     """Main pipeline function."""
@@ -57,7 +57,7 @@ def coincap_marketdata_pipeline():
         project_root = os.path.dirname(dag_path)
         
         # Define relative paths to the dbt project and profiles
-        dbt_project_dir = os.path.join(project_root, "crypto_analytics")
+        dbt_project_dir = os.path.join(project_root, "dbt", "crypto_analytics")
         
         # Best practice: keep the profiles.yml in the root of your dbt project for portability
         profiles_dir = dbt_project_dir 

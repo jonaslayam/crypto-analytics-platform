@@ -10,8 +10,8 @@ COPY requirements.txt /requirements.txt
 
 RUN pip install --no-cache-dir -r /requirements.txt
 
-COPY dags/ /opt/airflow/dags
-COPY src/ /opt/airflow/src
+COPY src /opt/airflow/src
+COPY dags /opt/airflow/dags
 
 ENV PYTHONPATH=/opt/airflow
 ENV PATH="/home/airflow/.local/bin:${PATH}"

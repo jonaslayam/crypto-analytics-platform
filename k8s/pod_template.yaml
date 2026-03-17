@@ -30,13 +30,6 @@ spec:
       emptyDir:
         sizeLimit: 20Gi
 
-    - name: oci-key-vol
-      secret:
-        secretName: secrets-local
-        items:
-          - key: oci_key.pem
-            path: oci_private_key.pem
-
   tolerations:
     - key: "workload"
       operator: "Equal"

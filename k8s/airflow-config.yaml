@@ -3,12 +3,38 @@ executor: KubernetesExecutor
 nodeSelector:
   role: core
 
+logs:
+  persistence:
+    enabled: false
+
+config:
+  api:
+    workers: "1"
+  kubernetes:
+    pod_template_file: "/opt/airflow/k8s/pod_template.yaml"
+    namespace: "airflow"
+  kubernetes_executor:
+    delete_worker_pods: "False"
+    delete_worker_pods_on_failure: "False"
+  core:
+    parallelism: "1"
+    dag_concurrency: "1"
+    max_active_runs_per_dag: "1"
+
+extraEnvFrom: |
+  - secretRef:
+      name: secrets-local
+
+webserverSecretKeySecretName: "secrets-local"
+fernetKeySecretName: "secrets-local"
+
 postgresql:
   image:
     registry: docker.io
     repository: bitnami/postgresql
     tag: latest
     pullPolicy: IfNotPresent
+
 
   primary:
     replicas: 1
@@ -37,6 +63,18 @@ apiServer:
     limits:
       cpu: "500m"
       memory: "2Gi"
+
+createUserJob:
+  useHelmHooks: true
+
+webserver:
+  defaultUser:
+    enabled: true
+    role: Admin
+    username: "jonas_admin"
+    email: "jonaslaya@workmate.cl"
+    firstName: "Jonas"
+    lastName: "Laya"
 
 scheduler:
   replicas: 1
@@ -88,21 +126,3 @@ statsd:
     limits:
       cpu: "200m"
       memory: "256Mi"
-
-env:
-  - name: AIRFLOW__KUBERNETES__POD_TEMPLATE_FILE
-    value: "/opt/airflow/k8s/pod_template.yaml"
-
-extraEnvFrom: |
-  - secretRef:
-      name: secrets-local
-
-config:
-  kubernetes:
-    namespace: airflow
-    delete_worker_pods: "False"
-    
-  core:
-    parallelism: "1"
-    dag_concurrency: "1"
-    max_active_runs_per_dag: "1"

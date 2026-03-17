@@ -116,7 +116,7 @@ class CryptoTransformer(BaseTransformer):
 
 if __name__ == "__main__":
     # The URI you provided from your manual extraction
-    test_uri = "oci://jonas-data-platform@axxdt8jrk4om/raw/year=2026/month=03/day=11/assets_20260311_084046.json"
+    test_uri = "oci://jonas-data-platform@axxdt8jrk4om/raw/year=2026/month=03/day=17/assets_20260316_211207.json"
     
     try:
         logger.info("--- Starting Manual Transformation Test ---")

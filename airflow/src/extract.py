@@ -14,8 +14,7 @@ load_dotenv()
 logger = get_logger("EXTRACT_COINCAP")
 
 API_URL = os.getenv("COINCAP_API_URL")
-BASE_DIR = Path(__file__).resolve().parent.parent 
-RAW_DATA_DIR = BASE_DIR / "data" / "raw"
+RAW_DATA_DIR = Path("/tmp")
 
 
 class CoincapExtractor(BaseExtractor):
