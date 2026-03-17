@@ -13,6 +13,24 @@ staged AS (
         
     FROM source_data
     WHERE EVENT_TIME IS NOT NULL AND ASSET_ID IS NOT NULL
+),
+
+deduplication as (
+    SELECT 
+        s.price_sk,
+        s.asset_id,
+        s.price_usd,
+        s.volume_usd_24h,
+        s.event_time,
+        ROW_NUMBER() OVER (PARTITION BY s.price_sk ORDER BY s.event_time DESC) as rn
+    FROM staged s
 )
 
-SELECT * FROM staged
+SELECT 
+    d.price_sk,
+    d.asset_id,
+    d.price_usd,
+    d.volume_usd_24h,
+    d.event_time
+FROM deduplication d
+WHERE d.rn = 1

@@ -79,26 +79,46 @@ final_features AS (
         CASE WHEN rsi.last_volume_usd > 0 THEN ((rsi.volume_usd_24h - rsi.last_volume_usd) / rsi.last_volume_usd) * 100 ELSE 0 END AS volume_pct_change
 
     FROM rsi_logic rsi
+), 
+deduplication as (
+    SELECT 
+        f.fact_sk,
+        d.asset_sk,
+        f.date_key,
+        f.event_time,
+        f.price_usd,
+        f.ma_24h_usd,
+        f.z_score_24h,
+        COALESCE(f.rsi_24h, 50) AS rsi_24h,
+        f.pct_change_since_last,
+        f.volume_pct_change,
+        f.target_price_next_24h,
+        f.target_price_next_6h,
+        f.target_direction_next_6h,
+        EXTRACT(HOUR FROM f.event_time) AS hour_of_day,
+        TO_CHAR(f.event_time, 'D') AS day_of_week,
+        ROW_NUMBER() OVER (PARTITION BY f.fact_sk ORDER BY f.event_time DESC) as dedupe_rn
+    FROM final_features f
+    JOIN {{ ref('dim_assets') }} d
+        ON f.asset_id = d.asset_id
+        AND f.event_time >= d.valid_from 
+        AND (f.event_time < d.valid_to OR d.valid_to IS NULL)
 )
-
 SELECT 
-    f.fact_sk,
-    d.asset_sk,
-    f.date_key,
-    f.event_time,
-    f.price_usd,
-    f.ma_24h_usd,
-    f.z_score_24h,
-    COALESCE(f.rsi_24h, 50) AS rsi_24h,
-    f.pct_change_since_last,
-    f.volume_pct_change,
-    f.target_price_next_24h,
-    f.target_price_next_6h,
-    f.target_direction_next_6h,
-    EXTRACT(HOUR FROM f.event_time) AS hour_of_day,
-    TO_CHAR(f.event_time, 'D') AS day_of_week
-FROM final_features f
-JOIN {{ ref('dim_assets') }} d
-    ON f.asset_id = d.asset_id
-    AND f.event_time >= d.valid_from 
-    AND (f.event_time < d.valid_to OR d.valid_to IS NULL)
+    fact_sk,
+    asset_sk,
+    date_key,
+    event_time,
+    price_usd,
+    ma_24h_usd,
+    z_score_24h,
+    rsi_24h,
+    pct_change_since_last,
+    volume_pct_change,
+    target_price_next_24h,
+    target_price_next_6h,
+    target_direction_next_6h,
+    hour_of_day,
+    day_of_week
+FROM deduplication d
+WHERE d.dedupe_rn = 1
