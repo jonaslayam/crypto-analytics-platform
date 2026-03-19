@@ -16,7 +16,8 @@ WITH base_prices AS (
     FROM {{ ref('stg_crypto_prices') }}
     
     {% if is_incremental() %}
-        WHERE event_time > (SELECT MAX(event_time) - INTERVAL '30' HOUR FROM {{ this }})
+        -- Works perfectly because event_time is a TIMESTAMP
+        WHERE event_time > (SELECT MAX(event_time) - INTERVAL '72' HOUR FROM {{ this }})
     {% endif %}
 ),
 
@@ -36,18 +37,33 @@ calculated_features AS (
             RANGE BETWEEN INTERVAL '24' HOUR PRECEDING AND CURRENT ROW
         ) AS stddev_24h_usd,
         
-        -- 2. Lags and Diff for Momentum and RSI
-        LAG(bp.price_usd) OVER (PARTITION BY bp.asset_id ORDER BY bp.event_time) AS last_price_usd,
-        LAG(bp.volume_usd_24h) OVER (PARTITION BY bp.asset_id ORDER BY bp.event_time) AS last_volume_usd,
-        bp.price_usd - LAG(bp.price_usd) OVER (PARTITION BY bp.asset_id ORDER BY bp.event_time) AS price_diff
+        -- 2. Lags for Momentum
+        -- Native Oracle syntax: INTERVAL 'H:MM' HOUR TO MINUTE
+        LAST_VALUE(bp.price_usd) OVER (
+            PARTITION BY bp.asset_id 
+            ORDER BY bp.event_time 
+            RANGE BETWEEN INTERVAL '6:30' HOUR TO MINUTE PRECEDING 
+                      AND INTERVAL '5:30' HOUR TO MINUTE PRECEDING
+        ) AS last_price_usd_6h,
+
+        LAST_VALUE(bp.volume_usd_24h) OVER (
+            PARTITION BY bp.asset_id 
+            ORDER BY bp.event_time 
+            RANGE BETWEEN INTERVAL '6:30' HOUR TO MINUTE PRECEDING 
+                      AND INTERVAL '5:30' HOUR TO MINUTE PRECEDING
+        ) AS last_volume_usd_6h
+
     FROM base_prices bp
 ),
 
 rsi_logic AS (
     SELECT 
         cf.*,
-        CASE WHEN price_diff > 0 THEN price_diff ELSE 0 END AS gain,
-        CASE WHEN price_diff < 0 THEN ABS(price_diff) ELSE 0 END AS loss
+        cf.price_usd - cf.last_price_usd_6h AS price_diff,
+
+        CASE WHEN (cf.price_usd - cf.last_price_usd_6h) > 0 THEN (cf.price_usd - cf.last_price_usd_6h) ELSE 0 END AS gain,
+        CASE WHEN (cf.price_usd - cf.last_price_usd_6h) < 0 THEN ABS(cf.price_usd - cf.last_price_usd_6h) ELSE 0 END AS loss
+
     FROM calculated_features cf
 ),
 
@@ -66,17 +82,46 @@ final_features AS (
             NULLIF(AVG(loss) OVER (PARTITION BY asset_id ORDER BY event_time RANGE BETWEEN INTERVAL '24' HOUR PRECEDING AND CURRENT ROW), 0)
         , 0))) AS rsi_24h,
 
-        -- 5. Target 
-        -- (What the AI should predict: The price in 24h / 4 steps ahead)
-        -- (What the AI should predict: The direction in 6h / 1 step ahead)
-        -- (Target: 1 if price goes up, 0 if price goes down)
-        LEAD(price_usd, 4) OVER (PARTITION BY asset_id ORDER BY event_time) AS target_price_next_24h,
-        LEAD(price_usd, 1) OVER (PARTITION BY asset_id ORDER BY event_time) AS target_price_next_6h,
-        CASE WHEN LEAD(price_usd, 1) OVER (PARTITION BY asset_id ORDER BY event_time) > price_usd THEN 1 ELSE 0 END AS target_direction_next_6h,
+        -- 5. Targets (Looking into the future: FOLLOWING)
+        FIRST_VALUE(price_usd) OVER (
+            PARTITION BY asset_id 
+            ORDER BY event_time 
+            RANGE BETWEEN INTERVAL '5:30' HOUR TO MINUTE FOLLOWING 
+                      AND INTERVAL '6:30' HOUR TO MINUTE FOLLOWING
+        ) AS target_price_next_6h,
+
+        FIRST_VALUE(price_usd) OVER (
+            PARTITION BY asset_id 
+            ORDER BY event_time 
+            RANGE BETWEEN INTERVAL '23:30' HOUR TO MINUTE FOLLOWING 
+                      AND INTERVAL '24:30' HOUR TO MINUTE FOLLOWING
+        ) AS target_price_next_24h,
+
+        CASE 
+            WHEN FIRST_VALUE(price_usd) OVER (
+                PARTITION BY asset_id 
+                ORDER BY event_time 
+                RANGE BETWEEN INTERVAL '5:30' HOUR TO MINUTE FOLLOWING 
+                          AND INTERVAL '6:30' HOUR TO MINUTE FOLLOWING
+            ) > price_usd 
+            THEN 1 
+            
+            -- Optional but recommended for ML:
+            -- If 6 hours haven't passed yet, we don't know if it went up or down.
+            WHEN FIRST_VALUE(price_usd) OVER (
+                PARTITION BY asset_id 
+                ORDER BY event_time 
+                RANGE BETWEEN INTERVAL '5:30' HOUR TO MINUTE FOLLOWING 
+                          AND INTERVAL '6:30' HOUR TO MINUTE FOLLOWING
+            ) IS NULL 
+            THEN NULL
+            
+            ELSE 0 
+        END AS target_direction_next_6h,
 
         -- Additional ratios
-        CASE WHEN rsi.last_price_usd > 0 THEN ((rsi.price_usd - rsi.last_price_usd) / rsi.last_price_usd) * 100 ELSE 0 END AS pct_change_since_last,
-        CASE WHEN rsi.last_volume_usd > 0 THEN ((rsi.volume_usd_24h - rsi.last_volume_usd) / rsi.last_volume_usd) * 100 ELSE 0 END AS volume_pct_change
+        CASE WHEN rsi.last_price_usd_6h > 0 THEN ((rsi.price_usd - rsi.last_price_usd_6h) / rsi.last_price_usd_6h) * 100 ELSE 0 END AS pct_change_since_last,
+        CASE WHEN rsi.last_volume_usd_6h > 0 THEN ((rsi.volume_usd_24h - rsi.last_volume_usd_6h) / rsi.last_volume_usd_6h) * 100 ELSE 0 END AS volume_pct_change
 
     FROM rsi_logic rsi
 ), 

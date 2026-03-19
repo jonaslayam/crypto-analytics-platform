@@ -11,12 +11,13 @@ sources:
     tables:
       - name: CRYPTO_ASSETS_EXT
         description: "External table containing the historical raw price data for crypto assets."
+        loaded_at_field: PROCESSED_AT
         
         # Service Level Agreement (SLA) for data freshness
-        freshness:
-          warn_after: {count: 24, period: hour}
-          error_after: {count: 48, period: hour}
-        loaded_at_field: PROCESSED_AT
+        config:
+          freshness:
+            warn_after: {count: 24, period: hour}
+            error_after: {count: 48, period: hour}
 
         columns:
           - name: ASSET_ID

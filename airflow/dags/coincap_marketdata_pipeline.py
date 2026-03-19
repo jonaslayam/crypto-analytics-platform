@@ -26,7 +26,7 @@ K8S_CONFIG_WORKER = {
 
 default_args = {
     "owner": "airflow",
-    "depends_on_past": False,
+    "depends_on_past": True,
     "email": ["[EMAIL_ADDRESS]"],
     "email_on_failure": False,
     "email_on_retry": False,
@@ -66,6 +66,7 @@ def coincap_marketdata_pipeline():
         name="dbt-run-pod",
         image="crypto-dbt:latest",
         image_pull_policy="IfNotPresent",
+        pod_template_file="/opt/airflow/k8s/pod_template.yaml",
         cmds=["dbt", "run"],
         arguments=[
             "--project-dir", "/app",
