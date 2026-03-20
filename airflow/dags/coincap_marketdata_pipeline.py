@@ -1,5 +1,5 @@
 import os
-from datetime import timedelta
+from datetime import datetime, timedelta
 from airflow.decorators import dag, task
 from src.extract import CoincapExtractor
 from src.transform import CryptoTransformer
@@ -36,8 +36,8 @@ default_args = {
 
 @dag(
     dag_id="coincap_marketdata_pipeline",
-    start_date=None,
-    schedule="0 */6 * * *",
+    start_date=datetime(2026, 1, 1),
+    schedule="0 */1 * * *",
     catchup=False,
     tags=["coincap", "marketdata", "etl"],
     default_args=default_args,
@@ -86,7 +86,7 @@ def coincap_marketdata_pipeline():
                 secret_ref=k8s.V1SecretEnvSource(name="secrets-local")
             )
         ],
-        is_delete_operator_pod=False,
+        is_delete_operator_pod=True,
         get_logs=True,
         executor_config=K8S_CONFIG_WORKER
     )
