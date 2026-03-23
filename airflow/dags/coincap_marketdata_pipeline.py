@@ -67,7 +67,7 @@ def coincap_marketdata_pipeline():
         image="crypto-dbt:latest",
         image_pull_policy="IfNotPresent",
         pod_template_file="/opt/airflow/k8s/pod_template.yaml",
-        cmds=["dbt", "run"],
+        cmds=["dbt", "build"],
         arguments=[
             "--project-dir", "/app",
             "--profiles-dir", "/app"
