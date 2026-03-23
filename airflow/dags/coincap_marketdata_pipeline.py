@@ -62,8 +62,8 @@ def coincap_marketdata_pipeline():
         return transformed_path
 
     dbt_run = KubernetesPodOperator(
-        task_id="dbt_run_task",
-        name="dbt-run-pod",
+        task_id="dbt_build_task",
+        name="dbt-build-pod",
         image="crypto-dbt:latest",
         image_pull_policy="IfNotPresent",
         pod_template_file="/opt/airflow/k8s/pod_template.yaml",
