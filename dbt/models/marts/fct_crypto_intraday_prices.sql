@@ -5,6 +5,9 @@
     on_schema_change='sync_all_columns'
 ) }}
 
+-- depends_on: {{ ref('stg_crypto_prices') }}
+-- depends_on: {{ ref('dim_assets') }}
+
 WITH base_prices AS (
     SELECT 
         price_sk AS fact_sk,
@@ -144,13 +147,10 @@ deduplication as (
         TO_CHAR(f.event_time, 'D') AS day_of_week,
         ROW_NUMBER() OVER (PARTITION BY f.fact_sk ORDER BY f.event_time DESC) as dedupe_rn
     FROM final_features f
-    JOIN {{ ref('dim_assets') }} d
-        ON f.asset_id = d.asset_id
-        AND f.event_time >= d.valid_from 
-        AND (f.event_time < d.valid_to OR d.valid_to IS NULL)
+    JOIN {{ ref('dim_assets') }} d ON f.asset_id = d.asset_id AND d.is_current = 1
 )
 SELECT 
-    fact_sk,
+    CAST(fact_sk AS VARCHAR2(100)) AS fact_sk,
     asset_sk,
     date_key,
     event_time,

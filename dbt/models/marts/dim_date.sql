@@ -3,6 +3,8 @@
     schema='OCI_GOLD'
 ) }}
 
+-- depends_on: {{ ref('stg_crypto_prices') }}
+
 WITH date_range AS (
     SELECT 
         TRUNC(MIN(event_time)) as min_date,

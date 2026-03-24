@@ -10,7 +10,19 @@
     )
 }}
 
-WITH ranked_assets AS (
+/* IMPORTANT FOR ORACLE ADW: 
+   We avoid using the 'WITH' clause (CTE) here because it triggers ORA-32034 
+   during dbt's internal MERGE operation. Instead, we use a standard subquery.
+*/
+
+SELECT 
+    CAST(asset_id AS VARCHAR2(100)) as asset_id,
+    symbol,
+    name,
+    explorer,
+    updated_at
+FROM (
+    /* Subquery to rank assets by event_time to get the latest metadata per asset_id */
     SELECT 
         asset_id,
         symbol,
@@ -22,15 +34,7 @@ WITH ranked_assets AS (
             ORDER BY event_time DESC
         ) as rn
     FROM {{ source('oci_silver_source', 'CRYPTO_ASSETS_EXT') }}
-)
-
-SELECT 
-    asset_id,
-    symbol,
-    name,
-    explorer,
-    updated_at
-FROM ranked_assets
+) 
 WHERE rn = 1
 
 {% endsnapshot %}

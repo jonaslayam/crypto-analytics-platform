@@ -3,8 +3,10 @@
     schema='OCI_GOLD'
 ) }}
 
+-- depends_on: {{ ref('scd_assets_metadata') }}
+
 SELECT
-    dbt_scd_id AS asset_sk,
+    CAST(dbt_scd_id AS VARCHAR2(100)) AS asset_sk,
     asset_id,
     symbol,
     name,
