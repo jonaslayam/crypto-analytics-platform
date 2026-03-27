@@ -70,7 +70,8 @@ def coincap_marketdata_pipeline():
         cmds=["dbt", "build"],
         arguments=[
             "--project-dir", "/app",
-            "--profiles-dir", "/app"
+            "--profiles-dir", "/app",
+            "--no-partial-parse"
         ],
         node_selector={"role": "worker"},
         tolerations=[

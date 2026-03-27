@@ -72,7 +72,7 @@ webserver:
     enabled: true
     role: Admin
     username: "jonas_admin"
-    email: "jonaslaya@workmate.cl"
+    email: "jonas.laya.m@gmail.com"
     firstName: "Jonas"
     lastName: "Laya"
 
