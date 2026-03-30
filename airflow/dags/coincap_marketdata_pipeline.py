@@ -67,11 +67,9 @@ def coincap_marketdata_pipeline():
         image="crypto-dbt:latest",
         image_pull_policy="IfNotPresent",
         pod_template_file="/opt/airflow/k8s/pod_template.yaml",
-        cmds=["dbt", "build"],
+        cmds=["bash", "-c"],
         arguments=[
-            "--project-dir", "/app",
-            "--profiles-dir", "/app",
-            "--no-partial-parse"
+            "dbt clean && dbt build --project-dir /app --profiles-dir /app"
         ],
         node_selector={"role": "worker"},
         tolerations=[
