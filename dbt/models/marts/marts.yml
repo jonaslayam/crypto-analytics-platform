@@ -32,3 +32,60 @@ models:
         description: "Event timestamp indicating the specific ingestion time."
         tests:
           - not_null
+
+  - name: fct_crypto_intraday_prices
+    description: >
+      Incremental fact table with technical/statistical indicators (RSI, Z-Score,
+      moving average) computed per asset over a rolling 24h window, plus forward-looking
+      target columns for future ML use. Grain: one record per (asset_id, event_time).
+    columns:
+      - name: FACT_SK
+        description: "Surrogate key hashed from (asset_id, event_time). Declared unique_key for the incremental load."
+        tests:
+          - not_null
+          - unique
+
+      - name: ASSET_SK
+        description: "Foreign key (FK) linking to dim_assets."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_assets')
+              field: asset_sk
+
+      - name: DATE_KEY
+        description: "Foreign key (FK) linking to the dynamic dim_date dimension (YYYYMMDD)."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_date')
+              field: date_key
+
+      - name: EVENT_TIME
+        description: "Timestamp of the underlying price observation."
+        tests:
+          - not_null
+
+      - name: PRICE_USD
+        description: "Asset price measure in USD at event_time."
+        tests:
+          - not_null
+
+      - name: RSI_24H
+        description: "Relative Strength Index over a 24h window. Defaults to 50 (neutral) via COALESCE when there isn't enough history to compute it, so this should never be null."
+        tests:
+          - not_null
+
+      - name: TARGET_PRICE_NEXT_6H
+        description: >
+          Price 5:30-6:30h after event_time, used as a training label for future ML work
+          (see the README roadmap). Intentionally NULL for any row where that future window
+          hasn't happened yet -- do not backfill or coalesce this column, and never feed it
+          (or TARGET_PRICE_NEXT_24H / TARGET_DIRECTION_NEXT_6H) into a live-inference feature
+          set, since the live/most-recent row for each asset always has it as NULL.
+
+      - name: TARGET_PRICE_NEXT_24H
+        description: "Price 23:30-24:30h after event_time. Same target-leakage caveat as TARGET_PRICE_NEXT_6H."
+
+      - name: TARGET_DIRECTION_NEXT_6H
+        description: "1 if TARGET_PRICE_NEXT_6H > PRICE_USD, 0 if it fell, NULL if that future window hasn't happened yet."

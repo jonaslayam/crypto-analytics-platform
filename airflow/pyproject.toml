@@ -1,0 +1,11 @@
+[tool.pytest.ini_options]
+testpaths = ["test"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+# Kept deliberately light: catch real bugs (unused imports/names,
+# undefined names, syntax errors) without relitigating style across
+# every existing file.
+select = ["E9", "F"]
