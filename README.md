@@ -114,6 +114,7 @@ While the current v1.0 pipeline successfully delivers batch-based market intelli
 * Designing cost-efficient lakehouse architectures without relying on heavy distributed systems
 * Handling real-world orchestration issues in Kubernetes environments
 * Building scalable ELT pipelines with minimal infrastructure overhead
+* Eyeballing a handful of recent signals on the dashboard felt promising, but mechanically replaying all 122 of them across a full year (see the backtest above) told a different story. Manual spot-checks are biased toward whatever caught your attention recently; a backtest forces you to confront every signal the rules actually generate, including the ones during the bad stretches you'd otherwise skip past
 
 ---
 
@@ -226,6 +227,7 @@ Aunque la versión 1.0 de este pipeline cumple con la generación de inteligenci
 * Diseño de arquitecturas lakehouse eficientes en costos sin depender de sistemas distribuidos pesados
 * Manejo de problemas reales de orquestación en Kubernetes
 * Construcción de pipelines escalables con bajo overhead de infraestructura
+* Mirar unas pocas señales recientes en el dashboard daba una impresión positiva, pero replicar mecánicamente las 122 que generan las reglas a lo largo de todo un año (ver el backtest arriba) contó otra historia. El chequeo manual está sesgado hacia lo que llamó la atención recientemente; un backtest obliga a confrontar cada señal que las reglas realmente generan, incluidas las de los tramos malos que uno normalmente pasa por alto
 
 ---
 
