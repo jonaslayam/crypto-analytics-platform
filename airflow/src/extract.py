@@ -76,7 +76,10 @@ class CoincapExtractor(BaseExtractor):
                 data = json.load(f)
                 timestamp = data.get('timestamp')
 
-            if timestamp > 1e10: 
+            if timestamp is None:
+                raise ValueError(f"CoinCap response for {self.url} has no 'timestamp' field")
+
+            if timestamp > 1e10:
                 timestamp = timestamp / 1000.0
                 
             event_time = datetime.fromtimestamp(timestamp, tz=timezone.utc)

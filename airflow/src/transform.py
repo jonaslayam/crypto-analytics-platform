@@ -28,12 +28,21 @@ class CryptoTransformer(BaseTransformer):
         region = os.getenv("OCI_REGION")
         namespace = os.getenv("OCI_NAMESPACE")
         endpoint = f"{namespace}.compat.objectstorage.{region}.oraclecloud.com"
-        
+
+        # CREATE SECRET doesn't support DuckDB's normal `?` parameter binding,
+        # so these still land in the SQL text -- escape single quotes rather
+        # than interpolate the raw values, in case a rotated key ever contains one.
+        def _sql_escape(value: str) -> str:
+            return (value or "").replace("'", "''")
+
+        access_key = _sql_escape(os.getenv("OCI_ACCESS_KEY"))
+        secret_key = _sql_escape(os.getenv("OCI_SECRET_KEY"))
+
         self.con.execute(f"""
             CREATE SECRET oci_secret (
                 TYPE s3,
-                KEY_ID '{os.getenv('OCI_ACCESS_KEY')}',
-                SECRET '{os.getenv('OCI_SECRET_KEY')}',
+                KEY_ID '{access_key}',
+                SECRET '{secret_key}',
                 REGION '{region}',
                 ENDPOINT '{endpoint}',
                 URL_STYLE 'path',

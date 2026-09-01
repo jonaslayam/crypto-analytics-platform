@@ -20,6 +20,16 @@ WITH base_prices AS (
     
     {% if is_incremental() %}
         -- Works perfectly because event_time is a TIMESTAMP
+        --
+        -- NOTE: the window functions below need up to 24h of PRECEDING
+        -- context (ma_24h_usd, rsi_24h) and up to ~24:30h of FOLLOWING
+        -- context (target_price_next_24h). This 72h reprocessing window
+        -- gives every row in it at least 24h of margin on both sides, but
+        -- that hasn't been verified against a live run with real gaps in
+        -- the source data (e.g. a missed hourly extraction) -- worth
+        -- confirming rows near the edges of this window come out with the
+        -- same values a full non-incremental rebuild would produce before
+        -- relying on this table for anything that needs to match exactly.
         WHERE event_time > (SELECT MAX(event_time) - INTERVAL '72' HOUR FROM {{ this }})
     {% endif %}
 ),
