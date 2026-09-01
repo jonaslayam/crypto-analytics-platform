@@ -284,3 +284,43 @@ RETURN
         
         "⚪ Neutral"
     )
+```
+
+</details>
+
+## 📉 Backtest: Is the Strategy Actually Profitable?
+
+The DAX rules above are fixed technical-indicator thresholds, not a model fit to this data, so they can be tested directly against real history without needing a train/test split. `backtest/` mechanically replays them — one position at a time, entering on the candle *after* a Confirmed Buy signal (never the signal's own candle, which isn't fully known until it closes), exiting on Take Profit, Sell/Trend Reversal, or a 24h max-holding cap, and always reporting a buy & hold benchmark alongside the result so no number stands alone.
+
+Run against ~1 year of real hourly Bitcoin data (Sept 2025 – Sept 2026, 8,585 rows, fetched from CoinCap and pushed through the actual dbt models in `OCI_GOLD.fct_crypto_intraday_prices`):
+
+```
+trades opened/closed:  122 / 122 (0 abandoned)
+win rate:              45.9% (56/122)
+mean return/trade:     -0.37% (net of 10 bps/side fees)
+compounded return:     -38.61% (all trades chained)
+t-stat:                -1.876 (not significant at naive 95%)
+
+buy & hold over same period: -29.93%
+```
+
+**Honest reading:** over this specific period, the strategy loses money and does *worse* than simply holding Bitcoin — both are negative because it was a down year for BTC, but the rules add trading costs and whipsaw losses on top of the drawdown rather than avoiding it. The t-stat isn't statistically significant either way, and with a single asset over one year the 122 trades aren't independent draws (a multi-week trend clusters correlated wins or losses), so this isn't a rigorous significance test — it's a first honest check, and it fails to show an edge. Run it yourself: `python -m backtest --data <features.csv> --report`.
+
+### 🇪🇸 Backtest: ¿La estrategia es realmente rentable?
+
+Las reglas del DAX de arriba son umbrales fijos de indicadores técnicos, no un modelo ajustado a estos datos, así que se pueden probar directamente contra el histórico real sin necesitar una separación train/test. `backtest/` reproduce las reglas mecánicamente — una posición a la vez, entrando en la vela *siguiente* a una señal de Confirmed Buy (nunca en la vela de la propia señal, que no se conoce del todo hasta que cierra), saliendo por Take Profit, Sell/Trend Reversal, o un tope de 24h de holding máximo, y siempre reportando un benchmark de buy & hold junto al resultado para que ningún número quede solo.
+
+Ejecutado contra ~1 año de datos horarios reales de Bitcoin (sept. 2025 – sept. 2026, 8,585 filas, obtenidas de CoinCap y procesadas por los modelos reales de dbt en `OCI_GOLD.fct_crypto_intraday_prices`):
+
+```
+operaciones abiertas/cerradas: 122 / 122 (0 abandonadas)
+win rate:                      45.9% (56/122)
+retorno medio/operación:       -0.37% (neto de comisiones de 10 bps por lado)
+retorno compuesto:             -38.61% (todas las operaciones encadenadas)
+t-stat:                        -1.876 (no significativo al 95% ingenuo)
+
+buy & hold en el mismo período: -29.93%
+```
+
+**Lectura honesta:** en este período específico, la estrategia pierde dinero y lo hace *peor* que simplemente mantener Bitcoin — ambos son negativos porque fue un año bajista para BTC, pero las reglas suman costos de transacción y pérdidas por whipsaw encima de la caída en vez de evitarla. El t-stat tampoco es estadísticamente significativo, y con un solo activo durante un año las 122 operaciones no son extracciones independientes (una tendencia de varias semanas agrupa ganancias o pérdidas correlacionadas), así que esto no es una prueba de significancia rigurosa — es una primera verificación honesta, y no logra mostrar una ventaja. Corrélo usted mismo: `python -m backtest --data <features.csv> --report`.
+
